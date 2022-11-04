@@ -66,8 +66,9 @@ if mode == "train":
     epochs = 303
 
     # Loss function weight
-    cobi_vgg_weight = [0.5, 0.5, 0.5]
-    cobi_rgb_weight = [0.8]
+    unaligned_weight = [1.0]
+    cobi_rgb_weight = [2.0]
+    cobi_vgg_weight = [1.0, 1.0, 1.0]
     adversarial_weight = [1e-3]
 
     # Contextual loss parameter configuration
@@ -77,7 +78,7 @@ if mode == "train":
     patch_size = 10  # upscale factor = 4, upscale factor = 2, use 5, upscale factor = 8, use 15,
     stride = 1
     weight_spatial = 0.5
-    bandwidth = 0.1
+    bandwidth = 1.0
 
     # Optimizer parameter
     model_lr = 1e-4
@@ -99,4 +100,4 @@ if mode == "test":
     sr_dir = f"./results/test/{exp_name}"
     lr_dir = f"./data/SR_RAW/SRGAN_CoBi/test/LRbicx{upscale_factor}"
 
-    g_model_weights_path = f"./samples/SRGAN_CoBi_x4-DIV2K/g_epoch_5.pth.tar"
+    g_model_weights_path = f"./results/pretrained_models/SRGAN_CoBi_x4-DIV2K-8c4a7569.pth.tar"

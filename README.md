@@ -1,27 +1,27 @@
-# ContextualLoss-PyTorch
+# ContextualBilateralLoss-PyTorch
 
 ## Overview
 
 This repository contains an op-for-op PyTorch reimplementation
-of [Maintaining Natural Image Statistics with the Contextual Loss](https://arxiv.org/abs/1803.04626).
+of [Zoom to Learn, Learn to Zoom](https://arxiv.org/abs/1905.05169).
 
 ## Table of contents
 
-- [ContextualLoss-PyTorch](#contextualloss-pytorch)
+- [ContextualBilateralLoss-PyTorch](#contextualbilateralloss-pytorch)
     - [Overview](#overview)
     - [Table of contents](#table-of-contents)
     - [Download weights](#download-weights)
     - [Download datasets](#download-datasets)
     - [How Test and Train](#how-test-and-train)
-        - [Test SRGAN_CX](#test-srgan_cx)
-        - [Train SRResNet_CX model](#train-srresnet_cx-model)
-        - [Resume train SRResNet model](#resume-train-srresnet_cx-model)
-        - [Train SRGAN_CX model](#train-srgan_cx-model)
-        - [Resume train SRGAN_CX model](#resume-train-srgan_cx-model)
+        - [Test SRGAN_CoBi](#test-srgan_cobi)
+        - [Train SRResNet_CoBi model](#train-srresnet_cobi-model)
+        - [Resume train SRResNet model](#resume-train-srresnet_cobi-model)
+        - [Train SRGAN_CoBi model](#train-srgan_cobi-model)
+        - [Resume train SRGAN_CoBi model](#resume-train-srgan_cobi-model)
     - [Result](#result)
     - [Contributing](#contributing)
     - [Credit](#credit)
-        - [Maintaining Natural Image Statistics with the Contextual Loss](#maintaining-natural-image-statistics-with-the-contextual-loss)
+        - [Zoom to Learn, Learn to Zoom](#zoom-to-learn-learn-to-zoom)
 
 ## Download weights
 
@@ -41,69 +41,69 @@ Please refer to `README.md` in the `data` directory for the method of making a d
 
 Both training and testing only need to modify the `srresnet_config.py` file and `srgan_config.py` file.
 
-### Test SRGAN_CX
+### Test SRGAN_CoBi
 
 Modify the `srgan_config.py` file.
 
 - line 32: `g_arch_name` change to `srresnet_x4`.
 - line 39: `upscale_factor` change to `4`.
 - line 41: `mode` change to `test`.
-- line 43: `exp_name` change to `SRGAN_CX_x4-DIV2K`.
-- line 96: `g_model_weights_path` change to `./results/pretrained_models/SRGAN_CX_x4-DIV2K-8c4a7569.pth.tar`.
+- line 43: `exp_name` change to `SRGAN_CoBi_x4-DIV2K`.
+- line 96: `g_model_weights_path` change to `./results/pretrained_models/SRGAN_CoBi_x4-DIV2K-8c4a7569.pth.tar`.
 
 ```bash
 python3 test.py
 ```
 
-### Train SRResNet_CX model
+### Train SRResNet_CoBi model
 
 Modify the `srresnet_config.py` file.
 
 - line 32: `g_arch_name` change to `srresnet_x4`.
 - line 39: `upscale_factor` change to `4`.
 - line 41: `mode` change to `train`.
-- line 43: `exp_name` change to `SRResNet_CX_x4-DIV2K`.
+- line 43: `exp_name` change to `SRResNet_CoBi_x4-DIV2K`.
 
 ```bash
 python3 train_srresnet.py
 ```
 
-### Resume train SRResNet_CX model
+### Resume train SRResNet_CoBi model
 
 Modify the `srresnet_config.py` file.
 
 - line 32: `g_arch_name` change to `srresnet_x4`.
 - line 39: `upscale_factor` change to `4`.
 - line 41: `mode` change to `train`.
-- line 43: `exp_name` change to `SRResNet_CX_x4-DIV2K`.
-- line 59: `resume_g_model_weights_path` change to `./samples/SRGAN_CX_x4-DIV2K/g_epoch_xxx.pth.tar`.
+- line 43: `exp_name` change to `SRResNet_CoBi_x4-DIV2K`.
+- line 59: `resume_g_model_weights_path` change to `./samples/SRGAN_CoBi_x4-DIV2K/g_epoch_xxx.pth.tar`.
 
 ```bash
 python3 train_srresnet.py
 ```
 
-### Train SRGAN_CX model
+### Train SRGAN_CoBi model
 
 - line 31: `d_arch_name` change to `discriminator`.
 - line 32: `g_arch_name` change to `srresnet_x4`.
 - line 39: `upscale_factor` change to `4`.
 - line 41: `mode` change to `train`.
-- line 43: `exp_name` change to `SRGAN_CX_x4-DIV2K`.
-- line 58: `pretrained_g_model_weights_path` change to `./results/SRResNet_CX_x4-DIV2K/g_last.pth.tar`.
+- line 43: `exp_name` change to `SRGAN_CoBi_x4-DIV2K`.
+- line 58: `pretrained_g_model_weights_path` change to `./results/SRResNet_CoBi_x4-DIV2K/g_last.pth.tar`.
 
 ```bash
 python3 train_srgan.py
 ```
 
-### Resume train SRGAN_CX model
+### Resume train SRGAN_CoBi model
 
 - line 31: `d_arch_name` change to `discriminator`.
 - line 32: `g_arch_name` change to `srresnet_x4`.
 - line 39: `upscale_factor` change to `4`.
 - line 41: `mode` change to `train`.
-- line 43: `exp_name` change to `SRGAN_CX_x4-DIV2K`.
-- line 61: `resume_d_model_weights_path` change to `./samples/SRGAN_CX_x4-DIV2K/d_epoch_xxx.pth.tar`.
-- line 62: `resume_g_model_weights_path` change to `./samples/SRGAN_CX_x4-DIV2K/g_epoch_xxx.pth.tar`.
+- line 43: `exp_name` change to `SRGAN_CoBi_x4-DIV2K`.
+- line 61: `resume_d_model_weights_path` change to `./samples/SRGAN_CoBi_x4-DIV2K/d_epoch_xxx.pth.tar`.
+- line 62: `resume_g_model_weights_path` change to `./samples/SRGAN_CoBi_x4-DIV2K/g_epoch_xxx.pth.tar`.
 
 ```bash
 python3 train_srgan.py
@@ -115,18 +115,18 @@ Source of original paper results: [https://arxiv.org/pdf/1803.04626.pdf](https:/
 
 In the following table, the psnr value in `()` indicates the result of the project, and `-` indicates no test.
 
-| Set5 | Scale |  SRResNet_CX  |   SRGAN_CX    |
+| Set5 | Scale |  SRResNet_CoBi  |   SRGAN_CoBi    |
 |:----:|:-----:|:-------------:|:-------------:|
 | PSNR |   4   | -(**32.14**)  | -(**30.64**)  |
 | SSIM |   4   | -(**0.8954**) | -(**0.8642**) |
 
-| Set14 | Scale |  SRResNet_CX  |   SRGAN_CX    |
+| Set14 | Scale |  SRResNet_CoBi  |   SRGAN_CoBi    |
 |:-----:|:-----:|:-------------:|:-------------:|
 | PSNR  |   4   | -(**28.57**)  | -(**27.12**)  |
 | SSIM  |   4   | -(**0.7815**) | -(**0.7321**) |
 
 ```bash
-# Download `SRGAN_CX_x4-DIV2K-8c4a7569.pth.tar` weights to `./results/pretrained_models`
+# Download `SRGAN_CoBi_x4-DIV2K-8c4a7569.pth.tar` weights to `./results/pretrained_models`
 # More detail see `README.md<Download weights>`
 python3 ./inference.py
 ```
@@ -141,7 +141,7 @@ Output:
 
 ```text
 Build `srresnet_x4` model successfully.
-Load `srresnet_x4` model weights `./results/pretrained_models/SRGAN_CX_x4-DIV2K-8c4a7569.pth.tar` successfully.
+Load `srresnet_x4` model weights `./results/pretrained_models/SRGAN_CoBi_x4-DIV2K-8c4a7569.pth.tar` successfully.
 SR image save to `./figure/comic_sr.png`
 ```
 
@@ -154,7 +154,7 @@ I look forward to seeing what the community does with these models!
 
 ## Credit
 
-### Maintaining Natural Image Statistics with the Contextual Loss
+### Zoom to Learn, Learn to Zoom
 
 _Roey Mechrez, Itamar Talmi, Firas Shama, Lihi Zelnik-Manor_ <br>
 

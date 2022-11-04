@@ -47,7 +47,7 @@ def main():
     d_model, g_model = build_model()
     print(f"Build `{srgan_config.g_arch_name}` model successfully.")
 
-    cobi_rgb_criterion, cobi_vgg_criterion, adversarial_criterion = define_loss()
+    unaligned_criterion, cobi_rgb_criterion, cobi_vgg_criterion, adversarial_criterion = define_loss()
     print("Define all loss functions successfully.")
 
     d_optimizer, g_optimizer = define_optimizer(d_model, g_model)
@@ -115,6 +115,7 @@ def main():
         train(d_model,
               g_model,
               train_prefetcher,
+              unaligned_criterion,
               cobi_rgb_criterion,
               cobi_vgg_criterion,
               adversarial_criterion,
@@ -208,9 +209,11 @@ def build_model() -> [nn.Module, nn.Module]:
     return d_model, g_model
 
 
-def define_loss() -> [model.contextual_bilateral_loss_for_rgb,
+def define_loss() -> [nn.L1Loss,
+                      model.contextual_bilateral_loss_for_rgb,
                       model.contextual_bilateral_loss_for_vgg,
                       nn.BCEWithLogitsLoss]:
+    unaligned_criterion = nn.L1Loss()
     cobi_rgb_criterion = model.contextual_bilateral_loss_for_rgb(
         feature_model_extractor_nodes=srgan_config.feature_model_extractor_nodes,
         feature_model_normalize_mean=srgan_config.feature_model_normalize_mean,
@@ -230,11 +233,12 @@ def define_loss() -> [model.contextual_bilateral_loss_for_rgb,
     adversarial_criterion = nn.BCEWithLogitsLoss()
 
     # Transfer to CUDA
+    unaligned_criterion = unaligned_criterion.to(device=srgan_config.device)
     cobi_rgb_criterion = cobi_rgb_criterion.to(device=srgan_config.device)
     cobi_vgg_criterion = cobi_vgg_criterion.to(device=srgan_config.device)
     adversarial_criterion = adversarial_criterion.to(device=srgan_config.device)
 
-    return cobi_rgb_criterion, cobi_vgg_criterion, adversarial_criterion
+    return unaligned_criterion, cobi_rgb_criterion, cobi_vgg_criterion, adversarial_criterion
 
 
 def define_optimizer(d_model, g_model) -> [optim.Adam, optim.Adam]:
@@ -269,6 +273,7 @@ def train(
         d_model: nn.Module,
         g_model: nn.Module,
         train_prefetcher: CUDAPrefetcher,
+        unaligned_criterion: nn.L1Loss,
         cobi_rgb_criterion: model.contextual_bilateral_loss_for_rgb,
         cobi_vgg_criterion: model.contextual_bilateral_loss_for_vgg,
         adversarial_criterion: nn.BCEWithLogitsLoss,
@@ -282,6 +287,7 @@ def train(
     # Print information of progress bar during training
     batch_time = AverageMeter("Time", ":6.3f")
     data_time = AverageMeter("Data", ":6.3f")
+    unaligned_losses = AverageMeter("Unaligned loss", ":6.6f")
     cobi_rgb_losses = AverageMeter("CoBi_RGB loss", ":6.6f")
     cobi_vgg_losses = AverageMeter("CoBi_VGG loss", ":6.6f")
     adversarial_losses = AverageMeter("Adversarial loss", ":6.6f")
@@ -289,7 +295,7 @@ def train(
     d_sr_probabilities = AverageMeter("D(SR)", ":6.3f")
     progress = ProgressMeter(batches,
                              [batch_time, data_time,
-                              cobi_rgb_losses, cobi_vgg_losses, adversarial_losses,
+                              unaligned_losses, cobi_rgb_losses, cobi_vgg_losses, adversarial_losses,
                               d_gt_probabilities, d_sr_probabilities],
                              prefix=f"Epoch: [{epoch + 1}]")
 
@@ -314,6 +320,7 @@ def train(
         # Transfer in-memory data to CUDA devices to speed up training
         gt = batch_data["gt"].to(device=srgan_config.device, non_blocking=True)
         lr = batch_data["lr"].to(device=srgan_config.device, non_blocking=True)
+        unaligned_weight = torch.Tensor(srgan_config.unaligned_weight).to(srgan_config.device)
         cobi_rgb_weight = torch.Tensor(srgan_config.cobi_rgb_weight).to(srgan_config.device)
         cobi_vgg_weight = torch.Tensor(srgan_config.cobi_vgg_weight).to(srgan_config.device)
         adversarial_weight = torch.Tensor(srgan_config.adversarial_weight).to(srgan_config.device)
@@ -369,11 +376,12 @@ def train(
         g_model.zero_grad(set_to_none=True)
 
         # Calculate the perceptual loss of the generator, mainly including pixel loss, feature loss and adversarial loss
+        unaligned_loss = torch.sum(torch.mul(unaligned_weight, unaligned_criterion(sr, gt)))
         cobi_rgb_loss = torch.sum(torch.mul(cobi_rgb_weight, cobi_rgb_criterion(sr, gt)))
         cobi_vgg_loss = torch.sum(torch.mul(cobi_vgg_weight, cobi_vgg_criterion(sr, gt)))
         adversarial_loss = torch.sum(torch.mul(adversarial_weight, adversarial_criterion(d_model(sr), real_label)))
         # Calculate the generator total loss value
-        g_loss = cobi_rgb_loss + cobi_vgg_loss + adversarial_loss
+        g_loss = unaligned_loss + cobi_rgb_loss + cobi_vgg_loss + adversarial_loss
         # Call the gradient scaling function in the mixed precision API to
         # back-propagate the gradient information of the fake samples
         g_loss.backward()
@@ -388,6 +396,7 @@ def train(
         d_sr_probability = torch.sigmoid_(torch.mean(sr_output.detach()))
 
         # Statistical accuracy and loss value for terminal data output
+        unaligned_losses.update(unaligned_loss.item(), lr.size(0))
         cobi_rgb_losses.update(cobi_rgb_loss.item(), lr.size(0))
         cobi_vgg_losses.update(cobi_vgg_loss.item(), lr.size(0))
         adversarial_losses.update(adversarial_loss.item(), lr.size(0))
@@ -403,6 +412,7 @@ def train(
             iters = batch_index + epoch * batches + 1
             writer.add_scalar("Train/D_Loss", d_loss.item(), iters)
             writer.add_scalar("Train/G_Loss", g_loss.item(), iters)
+            writer.add_scalar("Train/Unaligned_Loss", unaligned_loss.item(), iters)
             writer.add_scalar("Train/CoBi_RGB_Loss", cobi_rgb_loss.item(), iters)
             writer.add_scalar("Train/CoBi_VGG_Loss", cobi_vgg_loss.item(), iters)
             writer.add_scalar("Train/Adversarial_Loss", adversarial_loss.item(), iters)

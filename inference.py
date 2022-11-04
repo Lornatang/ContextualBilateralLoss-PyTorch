@@ -90,7 +90,7 @@ if __name__ == "__main__":
                         help="Super-resolution image path.")
     parser.add_argument("--model_weights_path",
                         type=str,
-                        default="./samples/SRGAN_CoBi_x4-DIV2K/g_epoch_3.pth.tar",
+                        default="./results/pretrained_models/SRGAN_CoBi_x4-DIV2K-8c4a7569.pth.tar",
                         help="Model weights file path.")
     parser.add_argument("--device_type",
                         type=str,
